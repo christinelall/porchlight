@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Porchlight — Agent Demo</title>
+  <style>
+    :root{--primary:#c7664e;--cream:#fdfbf7;--paper:#f4efe6;--text:#2d2a26;--muted:#786f66;--sage:#6b8e6b;--alert:#bb4b46;--amber:#b77a2e;--line:#e7ded2;--white:#fff}
+    *{box-sizing:border-box} body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--cream);color:var(--text)}
+    button{font:inherit;cursor:pointer}.app{min-height:100vh}.topbar{display:flex;justify-content:space-between;align-items:center;padding:18px 28px;border-bottom:1px solid var(--line);background:rgba(255,255,255,.84);position:sticky;top:0;z-index:5;backdrop-filter:blur(10px)}
+    .brand{display:flex;align-items:center;gap:12px}.mark{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:var(--primary);color:white;font-size:20px}.brand h1{font-family:Georgia,serif;font-size:21px;margin:0}.brand small{color:var(--muted)}
+    .mode{display:flex;gap:8px;background:var(--paper);padding:5px;border-radius:999px}.mode button{border:0;background:transparent;padding:9px 16px;border-radius:999px;color:var(--muted);font-weight:700}.mode button.active{background:white;color:var(--text);box-shadow:0 2px 10px #0000000b}
+    .wrap{max-width:1200px;margin:auto;padding:28px}.hero{display:flex;justify-content:space-between;align-items:end;gap:20px;margin-bottom:22px}.hero h2{font-family:Georgia,serif;font-size:34px;margin:0 0 7px}.hero p{margin:0;color:var(--muted)}
+    .demo-controls{display:flex;gap:10px;flex-wrap:wrap}.btn{border:0;border-radius:999px;padding:11px 16px;font-weight:800}.btn-primary{background:var(--primary);color:white}.btn-secondary{background:white;border:1px solid var(--line);color:var(--text)}.btn-sage{background:var(--sage);color:white}.btn-danger{background:var(--alert);color:white}.btn:disabled{opacity:.5;cursor:not-allowed}
+    .grid{display:grid;grid-template-columns:1.35fr .9fr;gap:22px}.card{background:white;border:1px solid var(--line);border-radius:20px;box-shadow:0 8px 30px #2d2a260b;padding:22px}.card h3{margin:0 0 5px;font-size:18px}.sub{color:var(--muted);font-size:14px}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:22px}.stat{background:white;border:1px solid var(--line);border-radius:18px;padding:16px}.stat strong{font-size:28px;display:block;margin-top:6px}.stat span{color:var(--muted);font-size:13px}
+    .route{display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--line);padding:18px 0}.route:first-of-type{border-top:0}.person{display:flex;gap:12px;align-items:center}.avatar{width:42px;height:42px;border-radius:50%;background:var(--paper);display:grid;place-items:center;font-weight:800;color:var(--primary)}.pill{display:inline-flex;align-items:center;border-radius:999px;padding:6px 10px;font-weight:800;font-size:12px;background:#eef4ee;color:#557457}.pill.attn{background:#fbefe9;color:var(--alert)}
+    .feed{display:flex;flex-direction:column;gap:12px;margin-top:16px;max-height:520px;overflow:auto;padding-right:4px}.event{border:1px solid var(--line);border-radius:16px;padding:14px}.event.attention{border-color:#efd0c8;background:#fff9f6}.event .meta{display:flex;justify-content:space-between;gap:10px;color:var(--muted);font-size:11px;margin-bottom:7px}.event p{margin:0;font-size:14px;line-height:1.45}.needs{margin-top:8px;color:var(--alert);font-size:12px;font-weight:800}
+    .issue{border:1px solid #efd0c8;background:#fff9f6;border-radius:16px;padding:14px;margin-top:12px}.issue p{margin:5px 0 10px;font-size:14px}.issue small{color:var(--muted)}
+    .phone-shell{max-width:430px;margin:0 auto;background:#f9f6f0;border:1px solid var(--line);border-radius:32px;padding:18px;box-shadow:0 20px 55px #2d2a2612}.phone-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}.step{background:white;border:1px solid var(--line);border-radius:999px;padding:5px 10px;font-size:12px;font-weight:800}.care-card{background:white;border-radius:24px;padding:22px;border:1px solid var(--line)}.care-card h2{font-family:Georgia,serif;font-size:28px;margin:0}.note{background:#fff5d8;border-radius:16px;padding:13px;margin:15px 0}.meal{background:var(--paper);border-radius:16px;padding:14px;margin:15px 0}.phone-actions{display:grid;gap:10px;margin-top:16px}.large{width:100%;min-height:52px}.protocol{background:white;border-radius:18px;border:1px solid var(--line);padding:16px;margin-top:14px}.protocol ol{padding-left:20px;margin:10px 0;color:var(--text)}.protocol li{margin:8px 0}.hidden{display:none!important}.banner{background:#edf4ee;border:1px solid #d6e4d7;color:#49664c;padding:12px 15px;border-radius:14px;margin-bottom:18px;font-size:14px;font-weight:700}.error{background:#fff1ed;border-color:#f0d1c9;color:#9b403c}
+    .footer-note{text-align:center;color:var(--muted);font-size:12px;margin:24px 0}.legend{font-size:12px;color:var(--muted);margin-top:14px}
+    @media(max-width:850px){.grid{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}.topbar{padding:14px}.wrap{padding:18px}.hero{align-items:start;flex-direction:column}.mode button{padding:8px 11px}.hero h2{font-size:28px}}
+  </style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <div class="brand"><div class="mark">♥</div><div><h1>Porchlight</h1><small>Good Neighbor agent · community meal delivery</small></div></div>
+    <div style="display:flex;gap:10px;align-items:center"><span id="agentMode" class="step">Checking Strands…</span><div class="mode"><button id="coordinatorTab" class="active">Coordinator</button><button id="volunteerTab">Volunteer</button></div></div>
+  </div>
+
+  <main class="wrap">
+    <div id="message" class="banner hidden"></div>
+
+    <section id="coordinatorView">
+      <div class="hero"><div><h2>Good morning, Coordinator</h2><p>Porchlight handles routine coordination in the background and surfaces only the exceptions that need you.</p></div><div class="demo-controls"><button class="btn btn-secondary" id="resetBtn">Reset demo</button><button class="btn btn-primary" id="cancelBtn">Simulate Sarah cancelling</button><button class="btn btn-secondary" id="reconcileBtn">Reconcile route</button></div></div>
+      <div class="stats">
+        <div class="stat"><span>Meals scheduled</span><strong>5</strong></div>
+        <div class="stat"><span>Route status</span><strong id="routeStatus">—</strong></div>
+        <div class="stat"><span>Assigned volunteer</span><strong id="assignedVolunteer" style="font-size:20px">—</strong></div>
+        <div class="stat"><span>Open issues</span><strong id="openCount">0</strong></div>
+      </div>
+      <div class="grid">
+        <div class="card"><h3>Route 3 — George Town</h3><div class="sub">Today's delivery route</div><div id="stopList"></div><div class="legend">Hackathon MVP: recipient/route data is synthetic. Backup outreach is simulated; Strands performs the orchestration.</div></div>
+        <div class="card"><h3>Agent Activity / Needs Attention</h3><div class="sub">Every Strands tool action is auditable; human-required items stay open.</div><div id="issues"></div><div class="feed" id="activity"></div></div>
+      </div>
+    </section>
+
+    <section id="volunteerView" class="hidden">
+      <div class="hero"><div><h2>Today's route</h2><p>A focused delivery flow. The agent stays behind the scenes unless something goes wrong.</p></div><div class="demo-controls"><button class="btn btn-secondary" id="completeRestBtn">Complete remaining normal stops</button></div></div>
+      <div class="phone-shell">
+        <div class="phone-top"><strong>Stop 3 of 5</strong><span class="step">Route 3</span></div>
+        <div class="care-card">
+          <div class="person"><div class="avatar">MS</div><div><h2>Mary S.</h2><div class="sub">Hard of hearing</div></div></div>
+          <div class="meal"><strong>Today's delivery</strong><div class="sub">Regular diet · 1 hot meal · 1 milk</div></div>
+          <div class="note"><strong>Delivery note</strong><div>Knock loudly. Please wait briefly after the second knock.</div></div>
+          <div class="phone-actions">
+            <button class="btn btn-sage large" id="deliveredBtn">Confirm Delivery</button>
+            <button class="btn btn-secondary large" id="noAnswerBtn">Problem / No Answer</button>
+          </div>
+          <div id="protocol" class="protocol hidden">
+            <strong>No-answer protocol</strong>
+            <ol><li>Knock or ring again and wait briefly.</li><li>Check the approved delivery notes.</li><li>Do not leave the meal unless instructions explicitly allow it.</li><li>Record the outcome and notify the site coordinator.</li></ol>
+            <textarea id="note" rows="3" style="width:100%;border:1px solid var(--line);border-radius:12px;padding:10px;font:inherit" placeholder="Optional factual note"></textarea>
+            <button class="btn btn-danger large" style="margin-top:10px" id="protocolDoneBtn">Protocol completed — notify coordinator</button>
+          </div>
+        </div>
+      </div>
+    </section>
+    <div class="footer-note">Porchlight · Helping make sure no neighbor is missed · Strands coordinates logistics; humans own care and safety decisions.</div>
+  </main>
+</div>
+<script src="/static/app.js"></script>
+</body>
+</html>
