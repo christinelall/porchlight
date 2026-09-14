@@ -8,7 +8,7 @@ except ImportError:
             return lambda f: f
         return func
 
-from .store import STATE, add_activity, create_issue, now_iso, persist_state, recompute_route
+from .store import STATE, add_activity, create_issue, now_iso, persist_state, recompute_route, record_agent_tool
 
 
 @tool
@@ -35,6 +35,7 @@ def find_backup_volunteers(route_id: str) -> dict:
     ]
     candidates.sort(key=lambda item: (item["priority"], item["name"]))
     add_activity(route_id, "backup_search", f"Porchlight found {len(candidates)} approved backup volunteer(s).", "info", actor="strands_tool")
+    record_agent_tool(route_id, "find_backup_volunteers", f"Found {len(candidates)} approved backup candidate(s).")
     return {"ok": True, "candidates": candidates}
 
 
@@ -53,6 +54,7 @@ def contact_backup(volunteer_id: str, route_id: str) -> dict:
     STATE["communications"].insert(0, comm)
     persist_state()
     add_activity(route_id, "backup_contacted", f"{volunteer['name']} was contacted for backup coverage and {('accepted' if response == 'accept' else 'declined')}.", "info", actor="strands_tool")
+    record_agent_tool(route_id, "contact_backup", f"{volunteer['name']} {'accepted' if response == 'accept' else 'declined'} backup coverage.")
     return {"ok": True, "volunteer_id": volunteer_id, "response": response}
 
 
@@ -64,11 +66,16 @@ def assign_volunteer(route_id: str, volunteer_id: str) -> dict:
     if not route or not volunteer:
         return {"ok": False, "error": "not_found"}
     if STATE["backup_outreach"].get(f"{route_id}:{volunteer_id}") != "accept":
+        record_agent_tool(route_id, "assign_volunteer", f"Assignment blocked for {volunteer['name']}: acceptance was not verified.", ok=False)
         return {"ok": False, "error": "acceptance_not_verified"}
     route["volunteer_id"] = volunteer_id
     route["status"] = "confirmed"
+    route["risk_note"] = None
+    route["overdue_minutes"] = 0
+    route["last_contact_status"] = f"{volunteer['name']} accepted backup coverage"
     persist_state()
     add_activity(route_id, "coverage_restored", f"Coverage restored. {volunteer['name']} accepted {route['name']}; no coordinator action is needed.", "resolved", actor="strands_tool")
+    record_agent_tool(route_id, "assign_volunteer", f"Assigned {volunteer['name']} after verified acceptance.")
     return {"ok": True, "route_id": route_id, "volunteer_id": volunteer_id, "volunteer_name": volunteer["name"]}
 
 
@@ -76,6 +83,7 @@ def assign_volunteer(route_id: str, volunteer_id: str) -> dict:
 def get_protocol(exception_type: str) -> dict:
     """Return the organization-defined deterministic protocol for a delivery exception."""
     protocol = STATE["protocols"].get(exception_type)
+    # Protocol lookup may happen outside an active route run; it remains visible in audit via the calling workflow.
     return {"ok": bool(protocol), "protocol": protocol, **({} if protocol else {"error": "protocol_not_found"})}
 
 
@@ -92,6 +100,7 @@ def record_delivery_outcome(route_id: str, stop_id: str, outcome: str, note: str
     stop["outcome_note"] = note
     persist_state()
     add_activity(route_id, "delivery_outcome", f"{stop['recipient']}: {outcome.replace('_', ' ')} recorded.", "info", actor="strands_tool")
+    record_agent_tool(route_id, "record_delivery_outcome", f"Recorded {outcome.replace('_', ' ')} for {stop['recipient']}.")
     recompute_route(route_id)
     return {"ok": True, "stop": stop}
 
@@ -106,12 +115,14 @@ def create_protocol_issue(route_id: str, stop_id: str, exception_type: str) -> d
     if not protocol:
         return {"ok": False, "error": "protocol_not_found"}
     if not STATE["protocol_completions"].get(f"{route_id}:{stop_id}:{exception_type}"):
+        record_agent_tool(route_id, "create_protocol_issue", "Escalation blocked: human protocol completion was not verified.", ok=False)
         return {"ok": False, "error": "human_protocol_completion_not_verified"}
     if stop.get("outcome") != exception_type:
         return {"ok": False, "error": "matching_outcome_not_recorded"}
     reason = f"{stop['recipient']} — {protocol['title'].lower()}. Approved volunteer protocol completed; {protocol['escalation_target']} review required."
     issue = create_issue(route_id, stop_id, f"{exception_type}_follow_up", protocol.get("severity", "medium"), reason)
     add_activity(route_id, "human_review_required", reason, "attention", True, actor="strands_tool")
+    record_agent_tool(route_id, "create_protocol_issue", f"Created {protocol.get('severity','medium')} priority human review for {stop['recipient']}.")
     recompute_route(route_id)
     return {"ok": True, "issue": issue, "requires_acknowledgement": protocol.get("requires_acknowledgement", True)}
 
@@ -126,6 +137,7 @@ def create_coverage_gap_issue(route_id: str) -> dict:
     route["status"] = "needs_review"
     persist_state()
     add_activity(route_id, "coverage_gap", issue["reason"], "attention", True, actor="strands_tool")
+    record_agent_tool(route_id, "create_coverage_gap_issue", "No approved backup accepted; escalated coverage gap to coordinator.")
     return {"ok": True, "issue": issue}
 
 
@@ -137,6 +149,5 @@ def reconcile_route(route_id: str) -> dict:
         return {"ok": False, "error": "route_not_found"}
     summary = recompute_route(route_id)
     clean = summary["pending"] == 0 and summary["open_issues"] == 0
-    if clean:
-        add_activity(route_id, "route_reconciled", f"{route['name']} reconciled automatically: {summary['total']} stops accounted for, {summary['exceptions']} exception(s), no open issues.", "resolved", actor="strands_tool")
+    record_agent_tool(route_id, "reconcile_route", f"Reconciliation {'clean' if clean else 'blocked'}: {summary['pending']} pending, {summary['open_issues']} open issue(s).")
     return {"ok": True, "clean": clean, "summary": summary}

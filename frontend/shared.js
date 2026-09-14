@@ -1,5 +1,6 @@
 export const $ = (sel, root=document) => root.querySelector(sel);
 export const $$ = (sel, root=document) => [...root.querySelectorAll(sel)];
+
 export async function api(path, options={}){
   const init={headers:{'Content-Type':'application/json'},...options};
   const res=await fetch(path,init);
@@ -15,6 +16,18 @@ export function timeAgo(iso){
 }
 export function clock(iso){return iso?new Date(iso).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}):'';}
 export function initials(name=''){return name.split(/\s+/).map(s=>s[0]).join('').slice(0,2).toUpperCase();}
-export function humanStatus(s=''){return s.replaceAll('_',' ').replace(/\b\w/g,c=>c.toUpperCase());}
+export function humanStatus(s=''){return String(s||'').replaceAll('_',' ').replace(/\b\w/g,c=>c.toUpperCase());}
 export function toast(message,error=false){const old=$('.toast');if(old)old.remove();const el=document.createElement('div');el.className='toast'+(error?' error':'');el.textContent=message;document.body.appendChild(el);setTimeout(()=>el.remove(),4500);}
 export function statusBadge(status){return `<span class="badge b-${esc(status)}">${esc(humanStatus(status))}</span>`;}
+export function mapsUrl(address=''){return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;}
+export function telUrl(phone=''){return `tel:${String(phone).replace(/[^+\d]/g,'')}`;}
+
+const CACHE_KEY='porchlight:last-state:v1';
+export function saveCachedState(state){try{localStorage.setItem(CACHE_KEY,JSON.stringify({savedAt:new Date().toISOString(),state}));}catch{}}
+export function loadCachedState(){try{return JSON.parse(localStorage.getItem(CACHE_KEY)||'null');}catch{return null}}
+export function registerServiceWorker(){if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('/service-worker.js').catch(()=>{}));}}
+export function installConnectivityBanner(target){
+  const el=typeof target==='string'?$(target):target;if(!el)return;
+  const render=()=>{const online=navigator.onLine;el.className=`connectivity ${online?'online':'offline'}`;el.innerHTML=online?'● Online':'● Offline · showing last synced route';};
+  window.addEventListener('online',render);window.addEventListener('offline',render);render();
+}
