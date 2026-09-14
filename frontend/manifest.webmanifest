@@ -1,0 +1,17 @@
+{
+  "name": "Porchlight Community Delivery",
+  "short_name": "Porchlight",
+  "start_url": "/volunteer",
+  "display": "standalone",
+  "background_color": "#fffdfa",
+  "theme_color": "#e9653b",
+  "description": "Community meal-delivery coordination for volunteers and coordinators.",
+  "icons": [
+    {
+      "src": "/static/icons/porchlight.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

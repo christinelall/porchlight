@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from .config import GEMINI_API_KEY, MODEL_ID, MODEL_PROVIDER, USE_STRANDS
-from .store import STATE, add_activity
+from .store import STATE, add_activity, start_agent_run, finish_agent_run
 from .tools import (
     get_route,
     find_backup_volunteers,
@@ -153,80 +153,39 @@ def build_agent(toolset: str = "all") -> Any:
 
 
 def run_agent(prompt: str, workflow: str, route_id: str = "r3", toolset: str = "all") -> str:
-    """Run a fresh Strands agent for one bounded workflow and leave an auditable marker."""
+    """Run a fresh Strands agent for one bounded workflow with auditable telemetry."""
     if not RUNTIME.enabled:
         raise RuntimeError("Strands live mode is not enabled")
 
-    add_activity(
-        route_id,
-        "strands_started",
-        f"Strands started workflow: {workflow}.",
-        "info",
-        actor="strands",
-    )
+    run = start_agent_run(route_id, workflow, RUNTIME.provider, RUNTIME.model_id, toolset)
+    add_activity(route_id, "strands_started", f"Porchlight started workflow: {workflow}.", "info", actor="strands")
     try:
-        # Fresh agent per workflow prevents unrelated demo turns from contaminating context.
         result = build_agent(toolset=toolset)(prompt)
-        add_activity(
-            route_id,
-            "strands_completed",
-            f"Strands completed workflow: {workflow}.",
-            "resolved",
-            actor="strands",
-        )
+        finish_agent_run(run["id"], "succeeded", result_summary=str(result))
+        add_activity(route_id, "strands_completed", f"Porchlight completed workflow: {workflow}.", "resolved", actor="strands")
         return str(result)
     except Exception as exc:
-        add_activity(
-            route_id,
-            "strands_error",
-            f"Strands workflow failed: {type(exc).__name__}: {exc}",
-            "attention",
-            True,
-            actor="strands",
-        )
+        finish_agent_run(run["id"], "failed", error=f"{type(exc).__name__}: {exc}")
+        add_activity(route_id, "strands_error", f"Porchlight workflow failed: {type(exc).__name__}: {exc}", "attention", True, actor="strands")
         raise
 
 
-
 async def run_agent_async(prompt: str, workflow: str, route_id: str = "r3", toolset: str = "all") -> str:
-    """Run Strands on the server's existing asyncio loop.
-
-    FastAPI already owns a long-lived event loop. Using Agent.__call__ from a
-    request creates a temporary loop via Strands' sync bridge, which can leave
-    Gemini/httpx cleanup tasks attached to a loop that has already closed.
-    invoke_async keeps the provider, streaming lifecycle, and cleanup on the
-    server loop instead.
-    """
+    """Run Strands on FastAPI's long-lived asyncio loop with auditable telemetry."""
     if not RUNTIME.enabled:
         raise RuntimeError("Strands live mode is not enabled")
 
-    add_activity(
-        route_id,
-        "strands_started",
-        f"Strands started workflow: {workflow}.",
-        "info",
-        actor="strands",
-    )
+    run = start_agent_run(route_id, workflow, RUNTIME.provider, RUNTIME.model_id, toolset)
+    add_activity(route_id, "strands_started", f"Porchlight started workflow: {workflow}.", "info", actor="strands")
     try:
         agent = build_agent(toolset=toolset)
         result = await agent.invoke_async(prompt)
-        add_activity(
-            route_id,
-            "strands_completed",
-            f"Strands completed workflow: {workflow}.",
-            "resolved",
-            actor="strands",
-        )
+        finish_agent_run(run["id"], "succeeded", result_summary=str(result))
+        add_activity(route_id, "strands_completed", f"Porchlight completed workflow: {workflow}.", "resolved", actor="strands")
         return str(result)
     except Exception as exc:
-        add_activity(
-            route_id,
-            "strands_error",
-            f"Strands workflow failed: {type(exc).__name__}: {exc}",
-            "attention",
-            True,
-            actor="strands",
-        )
+        finish_agent_run(run["id"], "failed", error=f"{type(exc).__name__}: {exc}")
+        add_activity(route_id, "strands_error", f"Porchlight workflow failed: {type(exc).__name__}: {exc}", "attention", True, actor="strands")
         raise
 
 def verify_coverage_postcondition(route_id: str = "r3") -> tuple[bool, str]:

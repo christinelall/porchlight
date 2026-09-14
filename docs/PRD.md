@@ -1,6 +1,6 @@
 # Porchlight — Product Requirements
 
-**Version:** 3.0 Product Build  
+**Version:** 3.2 Product Build  
 **Status:** Working product-shaped prototype  
 **Primary users:** Delivery coordinator, volunteer, program administrator  
 **Primary beneficiary:** Meal recipient / community member
@@ -86,10 +86,15 @@ If an organization-defined protocol exists, show its fixed steps and require vol
 
 ### 4.5 Administration
 Separate from operational screens:
-- volunteer roster / eligibility / availability;
-- protocols;
+- volunteer roster / eligibility / availability / backup priority;
+- organization contact and emergency guidance;
+- editable human-approved protocols;
+- integration status;
 - Strands/model diagnostics;
 - audit trail.
+
+### 4.6 Intermittent connectivity
+The volunteer route should remain viewable when connectivity drops. The app caches the application shell and last successfully synced route state. Delivery outcomes and safety-sensitive exceptions must not be silently queued: write actions are blocked until the device reconnects.
 
 ## 5. Agent workflows
 
@@ -149,14 +154,18 @@ Production should migrate from the single state document to normalized relationa
 
 ## 9. Product statuses
 
-### Route
+### Route lifecycle
 - `scheduled`
 - `confirmed`
-- `uncovered`
-- `at_risk`
 - `in_progress`
-- `needs_review`
 - `complete`
+
+### Route attention overlay
+- `at_risk`
+- `uncovered`
+- `needs_review`
+
+Lifecycle answers “where is the shift?” while the overlay answers “does a person need to intervene?”.
 
 ### Communication
 - `queued`
@@ -177,7 +186,10 @@ Production should migrate from the single state document to normalized relationa
 - Everyday views never expose “Strands live”, model names, raw tool calls, or demo/reset buttons.
 - Coordinator sees multiple routes and a human-only attention queue.
 - Volunteer can start a route, progress through stops, and record structured outcomes.
-- No-answer displays the configured protocol before submission.
+- Any configured exception displays its human-approved protocol before submission.
+- Exception submission requires a factual observation note and never asks the volunteer for a diagnosis.
+- Coordinator review shows the volunteer note and the approved protocol before acknowledgement.
+- Volunteer route instructions remain viewable from the last successful sync during a connectivity interruption; writes require reconnection.
 - Agent-restored coverage appears as a human-readable operational outcome and communication history.
 - Admin can see technical diagnostics and audit detail.
 - State survives server restart.
@@ -186,11 +198,48 @@ Production should migrate from the single state document to normalized relationa
 
 ## 11. Next production milestones
 
-1. Authentication and real role-based authorization.
+1. Authentication and server-enforced role-based authorization.
 2. Twilio/WhatsApp or chosen communication connector.
-3. Maps/navigation and route optimization.
-4. Program onboarding/configuration for routes, volunteers, recipients, meals and protocols.
+3. Route optimization / ETA provider beyond the current external navigation links.
+4. Program onboarding/configuration for routes, volunteers, recipients and meals.
 5. Normalized encrypted database schema + migrations.
 6. Notifications/background workers and scheduled volunteer confirmations.
 7. Safeguarding/privacy/retention review for pilot jurisdiction.
-8. Observability and agent evaluation suite.
+8. Observability, incident response, backups and agent evaluation suite.
+
+## 12. v1.3 hackathon-quality additions
+
+### 12.1 Needs Attention evidence
+Attention items should make the human decision obvious without opening raw logs. Each item should expose, where applicable:
+- severity and age;
+- route / stop / recipient context;
+- timing or last-contact information;
+- configured escalation owner;
+- route impact;
+- recommended next human action.
+
+### 12.2 Route visualization without a routing integration
+Route order and stop state must be understandable without a maps provider. Coordinator and volunteer surfaces may render a simple local stop-sequence schematic. External navigation remains optional per stop.
+
+### 12.3 Agent evaluation
+Administrators should be able to inspect bounded operational evidence:
+- workflow name and route;
+- provider/model;
+- tool sequence and tool outcomes;
+- start/end/duration;
+- success/failure;
+- application-level postcondition and verification result.
+
+Hidden chain-of-thought must never be stored or displayed.
+
+### 12.4 Deterministic scenario lab
+The local demo may offer administrator-only QA presets that reset sample data into known starting states. Scenario loading must not claim agent work occurred. Agent/human actions happen only after the normal product flow continues.
+
+Required scenarios:
+- backup decline then successful second backup;
+- all approved backups decline and coverage escalates;
+- no-answer human safety handoff;
+- baseline sample day.
+
+### 12.5 Protocol editor quality
+Administrator can edit protocol title, severity, escalation owner, factual-note prompt, human-acknowledgement requirement and ordered steps. Step order/removal and a volunteer-facing preview should be available before saving.
