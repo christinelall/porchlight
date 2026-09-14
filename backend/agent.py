@@ -234,7 +234,7 @@ def verify_coverage_postcondition(route_id: str = "r3") -> tuple[bool, str]:
     if not route:
         return False, "route_not_found"
     volunteer_id = route.get("volunteer_id")
-    if route.get("status") == "covered" and volunteer_id != "v1":
+    if route.get("status") in {"confirmed", "covered"} and volunteer_id != "v1":
         accepted = STATE["backup_outreach"].get(f"{route_id}:{volunteer_id}") == "accept"
         if accepted:
             return True, "coverage_restored"

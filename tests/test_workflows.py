@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import unittest
 
-from backend.store import STATE, reset_state
+from backend.store import STATE, reset_state, route_summary
 from backend.tools import (
     find_backup_volunteers,
     contact_backup,
@@ -32,6 +32,8 @@ class PorchlightWorkflowTests(unittest.TestCase):
         assignment = assign_volunteer("r3", "v2")
         self.assertTrue(assignment["ok"])
         self.assertEqual(STATE["routes"]["r3"]["volunteer_id"], "v2")
+        self.assertEqual(STATE["routes"]["r3"]["status"], "confirmed")
+        self.assertEqual(STATE["communications"][0]["status"], "accept")
 
     def test_no_answer_issue_requires_human_protocol_completion(self):
         record_delivery_outcome("r3", "s3", "no_answer", "No response after approved attempts.")
@@ -45,7 +47,7 @@ class PorchlightWorkflowTests(unittest.TestCase):
         self.assertEqual(issue["issue"]["severity"], "medium")
 
     def test_reconcile_blocks_open_issue_then_closes_after_ack(self):
-        for sid in ["s3", "s4", "s5"]:
+        for sid in ["s1", "s2", "s3", "s4", "s5"]:
             outcome = "no_answer" if sid == "s3" else "delivered"
             record_delivery_outcome("r3", sid, outcome)
         STATE["protocol_completions"]["r3:s3:no_answer"] = True
@@ -55,6 +57,15 @@ class PorchlightWorkflowTests(unittest.TestCase):
         issue["status"] = "acknowledged"
         clean = reconcile_route("r3")
         self.assertTrue(clean["clean"])
+        self.assertEqual(STATE["routes"]["r3"]["status"], "complete")
+
+    def test_route_summary_tracks_real_progress(self):
+        record_delivery_outcome("r3", "s1", "delivered")
+        record_delivery_outcome("r3", "s2", "delivered")
+        summary = route_summary("r3")
+        self.assertEqual(summary["delivered"], 2)
+        self.assertEqual(summary["pending"], 3)
+        self.assertEqual(summary["percent"], 40)
 
     def test_reset_restores_sarah_availability(self):
         STATE["volunteers"]["v1"]["available"] = False

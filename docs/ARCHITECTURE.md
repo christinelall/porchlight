@@ -1,50 +1,45 @@
 # Porchlight Architecture
 
-Porchlight deliberately separates **agent reasoning** from **policy enforcement**. Strands chooses and sequences operational tools; tools validate eligibility, acceptance, human protocol completion, and route-close conditions.
-
-```mermaid
-flowchart LR
-    C[Coordinator Web UI] --> API[FastAPI Backend]
-    V[Volunteer Mobile UI] --> API
-
-    API -->|bounded workflow event| S[Strands Operations Agent]
-    S --> M[Amazon Bedrock\nNova 2 Lite]
-
-    S --> T1[get_route]
-    S --> T2[find_backup_volunteers]
-    S --> T3[contact_backup]
-    S --> T4[assign_volunteer]
-    S --> T5[get_protocol]
-    S --> T6[record_delivery_outcome]
-    S --> T7[create_protocol_issue]
-    S --> T8[reconcile_route]
-
-    T1 --> D[(MVP State Store)]
-    T2 --> D
-    T3 --> D
-    T4 --> D
-    T5 --> P[Deterministic Program Policy]
-    T6 --> D
-    T7 --> P
-    T7 --> D
-    T8 --> D
-
-    D --> A[Auditable Agent Activity]
-    A --> C
-    D --> V
-
-    H[Human safety boundary] -. protocol completion / acknowledgement .-> API
+```text
+Coordinator UI      Volunteer UI       Admin UI
+     |                   |                |
+     +---------------- FastAPI -----------+
+                         |
+                   Product services
+         routes / stops / issues / protocols
+             communications / audit
+                         |
+                    SQLite state
+                         |
+            bounded operational events
+                         |
+                  Strands Agent
+                  /     |      \
+        coverage tools  |   reconciliation
+                        |
+               exception tools
+                        |
+          policy-enforcing functions
 ```
 
-## Safety boundary
+## Design boundary
 
-- Strands may decide **which permitted logistics tool to use next**.
-- `assign_volunteer` refuses assignment unless an eligible volunteer was contacted and accepted.
-- `create_protocol_issue` refuses escalation unless the volunteer explicitly confirmed the configured protocol was completed.
-- Severity, escalation target, and no-answer language come from deterministic program policy, not the model.
-- `reconcile_route` refuses clean closure while outcomes or required acknowledgements are unresolved.
-- No medical diagnosis or welfare inference is delegated to the model.
+The model is not granted broad database or shell access. Each workflow receives a narrow Strands toolset.
 
-## Hackathon data
+- **Coverage:** route lookup, approved backup search, outreach, verified assignment, escalation.
+- **No answer:** protocol lookup, structured outcome recording, policy issue creation.
+- **Reconciliation:** route reconciliation only.
 
-All recipient, volunteer, address, and route data in the demo is synthetic. Backup communications are simulated so judges can replay the workflow consistently; the orchestration and tool selection are performed by Strands in live mode.
+Tools validate preconditions. Tool results are authoritative.
+
+## UI boundary
+
+Coordinator and volunteer screens show operational language only. Model/provider/tool diagnostics live on the administrator surface. This keeps Porchlight useful even if the underlying model provider changes.
+
+## Current integration seams
+
+The repository deliberately leaves three replaceable adapters:
+
+1. **Model provider** — Strands model configuration.
+2. **Communications provider** — currently simulated; production SMS/WhatsApp/email later.
+3. **Persistence** — SQLite state document today; normalized production data model later.

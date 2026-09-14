@@ -2,126 +2,155 @@
 
 **Helping make sure no neighbor is missed.**
 
-A Good Neighbor agent demo for community meal-delivery coordination.
+Porchlight is an agent-powered operations companion for community meal-delivery programs. It keeps volunteer delivery work simple, handles routine coordination behind the scenes, and surfaces only the situations that need a human decision.
 
-The volunteer UI stays calm and task-focused while a Strands-powered operations agent handles routine coordination behind the scenes and surfaces only exceptions that require a human.
+This repository is the **v1 product-shaped build** evolved from the original hackathon proof of concept. The Strands workflows remain real; the interface is now organized around actual coordinator, volunteer, and administrator jobs rather than demo controls.
 
-## What works in this build
+## Product surfaces
 
-- Coordinator dashboard with route status, stop outcomes, agent activity, and human-required issues.
-- Seeded volunteer cancellation scenario.
-- Automatic backup-volunteer search/contact/reassignment.
-- Volunteer no-answer flow with explicit deterministic protocol.
-- Coordinator acknowledgement workflow.
-- End-of-route reconciliation.
-- Real Strands agent orchestration with custom tools when live mode is enabled.
-- Tool-enforced acceptance and policy boundaries so the model cannot invent assignments or welfare actions.
-- Deterministic fallback mode for UI development only; the submission demo should use live Strands mode.
-- Visible Strands/tool activity markers and postcondition checks so a model response cannot masquerade as completed work.
+### Coordinator — `/coordinator`
+- Today-at-a-glance route health rather than an AI console.
+- **Needs Attention** queue containing only human-required items.
+- Live route progress, volunteer assignment, estimated finish, and exception counts.
+- Route detail drawer with stops and volunteer communication status.
+- Human-readable **Recently handled by Porchlight** timeline.
+- Coverage recovery can be initiated from a real operational action (`Volunteer unavailable`), not a “simulate” button.
+
+### Volunteer — `/volunteer`
+- Mobile-first route home with shift lifecycle and progress.
+- One stop at a time, with delivery/access notes, meal details, accessibility information, and optional conversation starter.
+- Structured outcomes: Delivered, No Answer, Recipient Declined, Could Not Access, Meal Issue, Welfare Concern, Other.
+- Protocol steps shown only when the organization has configured one.
+- Factual-note language intentionally avoids diagnosis or inference.
+- Route reconciliation happens in the background as outcomes and coordinator acknowledgements arrive.
+
+### Administration — `/admin`
+- Volunteer availability, eligibility, contact status, and reliability.
+- Organization-defined exception protocols.
+- Separate technical/audit trail, including Strands diagnostics, kept out of everyday coordinator UX.
+
+## Agent behavior
+
+Porchlight uses **Strands Agents** for bounded operational workflows:
+
+1. **Route coverage recovery** — find approved backups, contact in policy order, assign only after verified acceptance, escalate if no approved candidate accepts.
+2. **No-answer handling** — after a volunteer completes the configured human protocol, record the outcome and create the policy-defined coordinator issue.
+3. **Reconciliation** — ensure every scheduled stop has an explicit outcome and required human issues are cleared before the route is considered complete.
+
+The key boundary is:
+
+> **Strands chooses and sequences permitted actions. Program tools and human-approved policy authorize them.**
+
+The model cannot invent a volunteer acceptance, delivery result, acknowledgement, or medical/welfare conclusion.
+
+## Persistence
+
+Operational state is persisted to SQLite at `data/porchlight.db` so routes, outcomes, communications, issues, and audit history survive browser refreshes and server restarts.
+
+For this iteration, the database stores the application state as a versionable JSON document inside SQLite. A production deployment can normalize these entities without changing the UI/API contracts.
 
 ## Run locally
 
-Python 3.10+ is required.
+Python 3.10+ (3.12 recommended):
 
 ```bash
-python -m venv .venv
-source .venv/bin/activate       # macOS/Linux
-# .venv\\Scripts\\Activate.ps1 # Windows PowerShell
-pip install -r requirements.txt
+python3.12 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
 uvicorn backend.main:app --reload
 ```
 
-Open `http://127.0.0.1:8000`.
+Then open:
 
-## Demo sequence
+- Coordinator: `http://127.0.0.1:8000/coordinator`
+- Volunteer: `http://127.0.0.1:8000/volunteer`
+- Administration: `http://127.0.0.1:8000/admin`
 
-1. On **Coordinator**, click **Simulate Sarah cancelling**.
-2. Watch the activity stream show backup outreach and reassignment to Marcus.
-3. Switch to **Volunteer**.
-4. Click **Problem / No Answer** for Mary S.
-5. Review the fixed no-answer protocol and click **Protocol completed — notify coordinator**.
-6. Switch to **Coordinator** and acknowledge the open issue.
-7. Switch to **Volunteer**, click **Complete remaining normal stops**.
-8. Return to **Coordinator** and click **Reconcile route**.
+## Enable real Strands orchestration
 
-## Enable Strands
-
-The app is intentionally usable before model access is configured. To run orchestration through the Strands Agent:
-
-1. Configure AWS credentials with Amazon Bedrock inference permission.
-2. The default model is `global.amazon.nova-2-lite-v1:0` (override with `PORCHLIGHT_MODEL_ID`).
-3. Set:
+Gemini is the currently tested model provider for Strands:
 
 ```bash
+export GEMINI_API_KEY='...'
 export PORCHLIGHT_USE_STRANDS=1
+export PORCHLIGHT_MODEL_PROVIDER=gemini
+export PORCHLIGHT_MODEL_ID=gemini-3.6-flash
+uvicorn backend.main:app --reload
 ```
 
-4. Restart the server.
+Do not commit API keys. The app also retains a Bedrock provider path for accounts with Bedrock model access.
 
-Verify `/api/health` reports `"enabled": true`, then run the real agent smoke test:
+Run the direct agent smoke test:
 
 ```bash
-PORCHLIGHT_USE_STRANDS=1 python scripts/strands_smoke.py
+PORCHLIGHT_USE_STRANDS=1 \
+PORCHLIGHT_MODEL_PROVIDER=gemini \
+PORCHLIGHT_MODEL_ID=gemini-3.6-flash \
+python scripts/strands_smoke.py
 ```
 
-The smoke test fails unless Strands genuinely reaches a valid operational postcondition.
+## Tests
 
-Strands Python package: `strands-agents`.
+```bash
+python -m pytest -q
+```
 
-Official docs:
-- https://strandsagents.com/docs/user-guide/quickstart/python/
-- https://strandsagents.com/docs/user-guide/concepts/tools/custom-tools/
+Current workflow tests cover:
+- acceptance required before reassignment;
+- approved backup search/contact/assignment;
+- persisted communication status;
+- no-answer protocol completion gate;
+- reconciliation blocked by open human issues;
+- progress calculation and reset behavior.
 
-## Safety boundary
+## Developer reset
 
-The agent coordinates logistics. It does **not** diagnose recipients or invent emergency responses. No-answer/emergency handling is constrained by program-defined protocols and human acknowledgement rules.
+There is intentionally **no reset/demo control in the production-facing interface**. During local development only:
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/dev/reset
+```
+
+## What is still an integration boundary
+
+This is now product-shaped but not yet a production deployment. Before a live community program pilot, add:
+
+- real authentication / role-based authorization;
+- an SMS/WhatsApp provider behind the existing communications abstraction;
+- mapping/navigation provider and route optimization;
+- encrypted recipient data and formal retention/privacy controls;
+- organization-specific emergency and safeguarding procedures;
+- monitoring, backups, migrations, and operational support.
+
+Backup outreach is deliberately simulated in this repository; **Strands genuinely decides and sequences the workflow, while the outbound communication adapter remains the next production integration.**
 
 ## Project structure
 
 ```text
 porchlight/
 ├── backend/
-│   ├── agent.py
-│   ├── main.py
-│   ├── store.py
-│   └── tools.py
-├── docs/
-│   └── PRD.md
+│   ├── agent.py          # Strands configuration + bounded toolsets
+│   ├── config.py
+│   ├── main.py           # FastAPI product API
+│   ├── store.py          # seeded state + SQLite persistence
+│   └── tools.py          # policy-enforcing Strands tools
 ├── frontend/
-│   ├── app.js
-│   └── index.html
-├── .env.example
-├── README.md
-└── requirements.txt
+│   ├── coordinator.html / coordinator.js
+│   ├── volunteer.html / volunteer.js
+│   ├── admin.html / admin.js
+│   ├── shared.js
+│   └── styles.css
+├── docs/
+│   ├── PRD.md
+│   └── ARCHITECTURE.md
+├── tests/
+└── scripts/
 ```
 
-## Architecture
+## Design origin
 
-See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) and [`docs/architecture.svg`](docs/architecture.svg).
-
-The important boundary is: **Strands chooses and sequences actions; tools and program policy authorize them.**
-
-## Tests
-
-```bash
-python -m unittest discover -s tests -v
-```
-
-The tests cover backup acceptance enforcement, no-answer human-protocol enforcement, route reconciliation, and repeatable reset behavior.
-
-## Pre-existing work disclosure
-
-The original meal-delivery product concept and Stitch UX mockups predate the hackathon. The submitted Porchlight application, backend, Strands integration, custom tools, autonomous workflows, safety boundaries, and hackathon demo implementation were built during the hackathon submission period.
+The original community meal-delivery concept and Stitch UX explorations predate the agent implementation. Porchlight keeps the warmth, mobile focus, and person-at-the-door philosophy of those screens while treating AI as background operations infrastructure rather than the interface itself.
 
 ## License
 
-MIT — see [`LICENSE`](LICENSE).
-
-
-## Reliability note
-
-Porchlight exposes only workflow-relevant tools to each Strands invocation (least privilege). Coverage workflows also verify a tool-backed postcondition after the agent returns and allow one bounded Strands retry if the first attempt stops without actually resolving the route. This keeps the demo agentic while preventing a plausible text-only answer from being treated as operational success.
-
-
-### FastAPI / Gemini event-loop note
-The live web endpoints invoke Strands with `await agent.invoke_async(...)` so Gemini runs on FastAPI's long-lived asyncio loop. The CLI smoke test can continue using the synchronous Strands bridge. `google-genai>=2.11.0` is required because newer releases include event-loop mismatch fixes.
+MIT — see `LICENSE`.

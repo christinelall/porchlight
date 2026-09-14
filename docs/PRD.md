@@ -1,279 +1,196 @@
-# Porchlight — Agentic Community Meal-Delivery Coordination
+# Porchlight — Product Requirements
 
-**Version:** 2.0 Hackathon MVP  
-**Status:** Build baseline  
-**Primary track:** Good Neighbor Agent  
-**Primary users:** Delivery coordinator and volunteer  
+**Version:** 3.0 Product Build  
+**Status:** Working product-shaped prototype  
+**Primary users:** Delivery coordinator, volunteer, program administrator  
 **Primary beneficiary:** Meal recipient / community member
 
-## 1. Product vision
+## 1. Vision
 
-Porchlight is a calm, mobile-first delivery companion and operations assistant for community meal-delivery programs. The volunteer interface stays simple and human. An AI operations agent works mostly behind the scenes to coordinate route coverage, execute approved response protocols, reconcile delivery outcomes, and surface only the issues that require a human decision.
+Porchlight is a calm, human-first operations platform for community meal-delivery programs. Volunteers should spend their attention on the person at the door, not on administrative software. Coordinators should see the handful of situations that need judgment, not every low-level event. An AI operations agent works in the background to resolve routine logistics within program-defined policy.
 
-**Product promise:** Technology handles the coordination work around the delivery so volunteers can focus on the person at the door.
+**Promise:** Porchlight handles coordination around the delivery so people can focus on people.
 
-## 2. Problem
+## 2. Product principles
 
-Community meal-delivery programs rely on coordinators and volunteers to manage frequent operational exceptions: last-minute cancellations, route gaps, delayed starts, no-answer situations, unresolved stops, and end-of-shift reconciliation. Much of this work is manual and time-sensitive. A missed handoff or unresolved delivery can affect a vulnerable recipient, while excessive alerts can overwhelm coordinators.
+1. **AI is infrastructure, not the interface.** Normal users should not need to know which model or tool executed a workflow.
+2. **Exception-first coordination.** Coordinator home prioritizes what needs action now; routine agent work moves to a quiet timeline.
+3. **One stop at a time.** Volunteer UI is mobile-first, legible, and task-focused.
+4. **Structured facts over free-form inference.** Delivery outcomes are explicit; factual notes never become medical diagnoses.
+5. **Human welfare boundary.** Logistics can be autonomous. Welfare, safeguarding, and emergency judgment remains human/policy controlled.
+6. **Auditable by design.** Agent/tool details are available to administrators without cluttering operational UX.
+7. **Every stop accounted for.** A route cannot quietly disappear into “complete” while a delivery or required review is unresolved.
 
-## 3. Goals
-
-1. Reduce coordinator effort spent on routine route exceptions.
-2. Make the volunteer experience linear, low-friction, and safe.
-3. Ensure every scheduled stop reaches an explicit outcome.
-4. Execute organization-defined escalation protocols consistently.
-5. Interrupt a human only when policy requires approval, acknowledgement, or judgment.
-6. Demonstrate genuine agent behavior: observe an event, reason over allowed choices, use tools, track state, and continue until the workflow is resolved or requires a human.
-
-## 4. Non-goals for the MVP
-
-- Medical diagnosis, triage, or clinical advice.
-- Autonomous emergency decision-making.
-- Full nonprofit CRM, fundraising, kitchen inventory, payroll, or donor management.
-- Continuous volunteer location surveillance.
-- Production SMS, telephony, GIS optimization, or identity management unless time permits.
-- Replacing coordinator authority or local operating procedures.
-
-## 5. Users and roles
+## 3. Roles
 
 ### Coordinator
-Needs a concise view of route health, unresolved exceptions, volunteer coverage, and agent actions. Can approve or acknowledge escalations and override assignments.
+Needs a concise picture of route health, volunteer coverage, delivery progress, late starts, and unresolved exceptions. Can review/acknowledge issues and manage operational exceptions.
 
 ### Volunteer
-Needs a clear route, one stop at a time, recipient-specific delivery instructions, and fast outcome reporting with minimal typing.
+Needs route assignment, clear stop order, navigation-ready address, delivery/access notes, recipient-specific context, and fast structured outcome reporting.
+
+### Administrator
+Manages volunteers, protocol configuration, technical diagnostics, audit trails, and future program settings.
 
 ### Recipient
-Does not need an account in the MVP. The recipient is the beneficiary whose delivery and welfare-related exceptions must not be lost in operational noise.
+Does not require an account in the first product version. Recipient information is limited to what is operationally necessary for a safe, respectful delivery.
 
-## 6. Core agent workflows
+## 4. Core experiences
 
-### Workflow A — Pre-route coverage
+### 4.1 Coordinator Home
+Must immediately answer:
+- Are today’s routes covered?
+- Which routes have started / completed?
+- Is anything at risk of being late?
+- Which recipient/route issues require a person?
 
-**Trigger:** An assigned volunteer declines, cancels, or fails to confirm by the configured cutoff.
+Components:
+- summary cards;
+- routes list with progress and status;
+- Needs Attention queue;
+- “Recently handled by Porchlight” timeline;
+- route detail panel with stops and communication history.
 
-**Agent actions:**
-1. Read the affected route and required time window.
-2. Find eligible backup volunteers based on availability and route constraints.
-3. Contact candidates in policy-defined order.
-4. Record responses.
-5. Reassign the route after an eligible volunteer accepts.
-6. Notify the original coordinator that coverage has been restored.
-7. If no replacement is found by the escalation threshold, create a human-required issue.
+### 4.2 Volunteer Route
+Lifecycle:
+`Assigned → Confirmed → Started → Delivering → Complete`
 
-**Human boundary:** The agent may assign only from the approved eligible list. Any rule exception requires coordinator approval.
+Volunteer sees:
+- route/start time/estimated finish;
+- progress (`x of y accounted for`);
+- ordered stops;
+- current/next stop;
+- recipient care card;
+- structured outcome choices.
 
-### Workflow B — Delivery exception / no answer
+### 4.3 Recipient Care Card
+Contains only delivery-relevant context:
+- display name;
+- address;
+- access/delivery instructions;
+- accessibility note when operationally useful;
+- meal/diet information;
+- optional conversation starter.
 
-**Trigger:** Volunteer records `No Answer`, `Needs Follow-up`, or another defined delivery exception.
+### 4.4 Exception Flow
+Structured outcomes:
+- Delivered
+- No Answer
+- Recipient Declined
+- Could Not Access Property
+- Meal Issue
+- Welfare Concern
+- Other
 
-**Agent actions:**
-1. Capture the stop, volunteer, timestamp, and structured reason.
-2. Present the organization-approved checklist/protocol to the volunteer.
-3. Record protocol steps completed.
-4. Notify the appropriate coordinator/contact according to deterministic policy.
-5. Track acknowledgement/resolution.
-6. Keep the route exception open until a permitted resolution is recorded.
+If an organization-defined protocol exists, show its fixed steps and require volunteer completion before submission. AI must not invent protocol content.
 
-**Human boundary:** The agent does not infer a medical condition or create a medical response. Emergency actions and escalation thresholds come from explicit organizational policy.
+### 4.5 Administration
+Separate from operational screens:
+- volunteer roster / eligibility / availability;
+- protocols;
+- Strands/model diagnostics;
+- audit trail.
 
-### Workflow C — End-of-shift reconciliation
+## 5. Agent workflows
 
-**Trigger:** Volunteer finishes the final stop or attempts to end the route.
+### A. Coverage recovery
+Trigger: assigned volunteer becomes unavailable or fails a future confirmation cutoff.
 
-**Agent actions:**
-1. Reconcile every scheduled recipient against a recorded outcome.
-2. Identify missing or unresolved outcomes.
-3. Prevent a clean close when policy-required issues remain open.
-4. Generate a concise coordinator summary.
-5. Close the route only when every stop is accounted for and required escalations are acknowledged.
+Strands may:
+1. inspect route;
+2. find approved eligible backups;
+3. contact in policy order;
+4. react to decline/accept responses;
+5. assign only after tool-verified acceptance;
+6. escalate if coverage cannot be restored.
 
-## 7. Experience principles
+### B. No-answer processing
+Trigger: volunteer records `No Answer` after completing the organization-approved protocol.
 
-- **Human first:** AI stays mostly invisible when work is proceeding normally.
-- **One task at a time:** Volunteer screens avoid dense dashboards and chat-style interaction.
-- **Exception, not notification, design:** Coordinator sees what needs action, plus a compact audit trail of work resolved automatically.
-- **Calm language:** No alarmist copy unless the configured protocol explicitly requires urgency.
-- **Explicit outcomes:** Every stop ends in a structured status.
-- **Explainability:** Agent actions show what happened and why a human is—or is not—needed.
+Strands may:
+1. load configured policy;
+2. record factual outcome/note;
+3. create policy-defined coordinator issue;
+4. stop.
 
-## 8. Existing Stitch screens to retain
+It may not infer illness, injury, consciousness, neglect, or safety.
 
-### Volunteer
-- Login / Start Shift
-- Route Overview
-- Navigation Mode
-- Recipient Care Card
-- Wellness Check
-- Emergency / Issue Modal
-- Shift Summary
+### C. Background reconciliation
+After each outcome or human acknowledgement, Porchlight recalculates route state. A route is complete only when every stop has a structured outcome and no required issue remains open.
 
-### Coordinator
-- Admin Dashboard Overview
-- Volunteer Management
-- Route Planning & Dispatch
-- Route Planning Heatmap (defer advanced optimization)
+## 6. Communications
 
-## 9. Required screen updates
+Product model supports outbound communications with:
+- target volunteer;
+- channel;
+- message;
+- sent time;
+- response status;
+- response time.
 
-### Coordinator dashboard
-Add **Agent Activity / Needs Attention** with two visual states:
+Current repository uses a deterministic simulated adapter. Production replaces this with SMS/WhatsApp/email without changing Strands’ decision boundary.
 
-**Resolved automatically**
-- Route coverage restored
-- Volunteer confirmation received
-- Delay acknowledged and within policy
-- Route reconciled successfully
+## 7. Persistence
 
-**Human action required**
-- Replacement not found
-- No-answer protocol awaiting acknowledgement
-- Rule exception requiring approval
-- Unresolved delivery at end of route
+Current build persists application state to SQLite. State includes routes, stops, volunteers, communications, issues, outcomes, protocols, operational timeline, and audit history.
 
-Each item must show:
-- severity/status
-- short title
-- one-line reason
-- timestamp
-- route/recipient reference
-- agent action already taken
-- next required human action, if any
+Production should migrate from the single state document to normalized relational tables with migrations, encryption, access control, backups, and retention policy.
 
-### Volunteer issue flow
-Retain the current large-button issue screen. After selection, show only the configured protocol steps and the next required action. Do not expose free-form AI reasoning.
+## 8. Safety requirements
 
-### Shift summary
-Add:
-- scheduled stops
-- completed deliveries
-- exceptions
-- unresolved issues
-- route closure state
+1. No diagnosis, clinical triage, or medical inference.
+2. No autonomous emergency decision-making.
+3. Program protocols are configuration, not LLM-generated instructions.
+4. Reassignment requires real/verified volunteer acceptance.
+5. Recipient outcome cannot be invented by an agent.
+6. Human-required items stay open until explicitly acknowledged/resolved.
+7. Agent actions are auditable.
+8. Production pilot requires privacy, safeguarding, authentication, retention, and local program review.
 
-## 10. Functional requirements
-
-### FR-1 Route assignment
-Coordinator can create/view a route and assign a volunteer.
-
-### FR-2 Confirmation
-The system records volunteer confirmation or cancellation.
-
-### FR-3 Replacement search
-The agent can retrieve eligible backups and attempt permitted reassignment.
-
-### FR-4 Agent audit trail
-Every tool action is logged with event type, timestamp, route, target, result, and whether human action is required.
-
-### FR-5 Delivery outcome
-Volunteer can record Delivered, No Answer, Needs Follow-up, or Emergency/Protocol-defined issue.
-
-### FR-6 Protocol execution
-For each exception type, the system loads a configured deterministic protocol.
-
-### FR-7 Human escalation
-The agent can create an issue requiring acknowledgement or approval but cannot bypass policy boundaries.
-
-### FR-8 Route reconciliation
-All scheduled stops must have an outcome before a route is considered reconciled.
-
-### FR-9 Coordinator override
-Coordinator can override an assignment or resolve/escalate an issue, with the action recorded.
-
-### FR-10 Demo mode
-The hackathon build includes seeded data and deterministic simulated communications so the complete workflow can be demonstrated without live SMS or phone integrations.
-
-## 11. Agent tools
-
-The Strands agent receives narrowly-scoped tools rather than broad system access:
-
-- `get_route(route_id)`
-- `find_backup_volunteers(route_id)`
-- `contact_backup(volunteer_id, route_id)`
-- `assign_volunteer(route_id, volunteer_id)`
-- `record_delivery_outcome(route_id, stop_id, outcome, note)`
-- `get_protocol(exception_type)`
-- `create_coordinator_issue(route_id, stop_id, severity, reason)`
-- `acknowledge_issue(issue_id, coordinator_id)`
-- `reconcile_route(route_id)`
-- `log_agent_activity(...)`
-
-Tools enforce authorization and validation. The model never receives unrestricted database or shell access.
-
-## 12. Safety requirements
-
-1. No diagnosis or health inference from volunteer notes.
-2. Emergency call behavior is deterministic and explicitly configured, not model-selected.
-3. Recipient details shown to the volunteer are limited to delivery-relevant information.
-4. Agent actions are auditable.
-5. Agent may not invent a substitute volunteer, recipient status, delivery result, or acknowledgement.
-6. Human-required events remain visibly open until acknowledged.
-7. Production deployment would require privacy review, authentication, access control, retention policy, and local program approval.
-
-## 13. MVP data model
-
-### Volunteer
-`id, name, active, available, eligible_routes[], phone_or_demo_channel`
+## 9. Product statuses
 
 ### Route
-`id, name, scheduled_date, start_time, volunteer_id, status, stop_ids[]`
+- `scheduled`
+- `confirmed`
+- `uncovered`
+- `at_risk`
+- `in_progress`
+- `needs_review`
+- `complete`
 
-### Stop
-`id, route_id, sequence, recipient_display_name, address, delivery_notes, outcome, outcome_note`
-
-### Protocol
-`exception_type, ordered_steps[], escalation_target, requires_acknowledgement`
+### Communication
+- `queued`
+- `sent`
+- `accept`
+- `decline`
+- `timed_out`
+- `failed`
 
 ### Issue
-`id, route_id, stop_id?, type, severity, status, created_at, acknowledged_by?`
+- `open`
+- `acknowledged`
+- future: `resolved`, `escalated`
 
-### AgentActivity
-`id, timestamp, route_id, event_type, message, status, human_action_required`
+## 10. Product acceptance criteria
 
-## 14. Hackathon demo scenario
+- Coordinator and volunteer experiences are separate pages with role-appropriate actions.
+- Everyday views never expose “Strands live”, model names, raw tool calls, or demo/reset buttons.
+- Coordinator sees multiple routes and a human-only attention queue.
+- Volunteer can start a route, progress through stops, and record structured outcomes.
+- No-answer displays the configured protocol before submission.
+- Agent-restored coverage appears as a human-readable operational outcome and communication history.
+- Admin can see technical diagnostics and audit detail.
+- State survives server restart.
+- Route progress/reconciliation updates without a manual “reconcile” button.
+- Workflow tests enforce acceptance/policy boundaries.
 
-1. Dashboard shows Route 3 assigned to Sarah and all routes healthy.
-2. Sarah cancels.
-3. Agent receives the event, finds eligible backups, contacts Marcus, receives a simulated acceptance, reassigns Route 3, and records “No action needed.”
-4. Marcus starts Route 3 and completes initial deliveries.
-5. At Mary S., Marcus selects **Problem / No Answer**.
-6. App shows the approved no-answer protocol; Marcus records completion.
-7. Agent logs the exception and creates a coordinator acknowledgement item because policy requires human review.
-8. Coordinator acknowledges the item.
-9. Marcus completes the route.
-10. Agent reconciles all stops and generates the final route summary.
+## 11. Next production milestones
 
-## 15. Acceptance criteria for the demo build
-
-- A user can switch between Coordinator and Volunteer demo views.
-- Triggering a seeded volunteer cancellation produces visible agent activity and an updated route assignment.
-- Recording `No Answer` opens the configured protocol and creates a coordinator issue after completion.
-- Coordinator can acknowledge the issue.
-- Route reconciliation correctly distinguishes fully resolved from unresolved routes.
-- Every automated action is visible in an audit/activity stream.
-- The system remains usable in demo mode even if a foundation-model call is unavailable.
-- When Strands is enabled, orchestration runs through a Strands Agent using custom tools rather than hard-coded UI-only transitions.
-
-## 16. Technical architecture
-
-**Frontend:** Lightweight responsive HTML/CSS/JavaScript, preserving the Stitch visual language.  
-**Backend:** Python + FastAPI.  
-**Agent:** Strands Agents SDK, one operations agent with custom tools.  
-**State for MVP:** In-memory seeded store; persistence can be added after the core demo works.  
-**Model:** Amazon Bedrock by default when AWS credentials are configured.  
-**Communications for MVP:** Simulated inbox/response tool to make the workflow deterministic in a public demo.
-
-## 17. Post-MVP opportunities
-
-- SMS/email integrations
-- program-specific configurable protocol editor
-- volunteer availability/preferences
-- route optimization / maps
-- secure authentication and role-based access
-- analytics on unresolved exceptions and coverage gaps
-- accessibility / voice-assisted volunteer flow
-- offline-friendly mobile PWA
-- multi-program tenancy
-
-## 18. Naming
-
-Use **Porchlight** consistently. Treat `Community Focus` and `Community Connect` only as historical prototype names; neither should appear in the submitted product UI.
+1. Authentication and real role-based authorization.
+2. Twilio/WhatsApp or chosen communication connector.
+3. Maps/navigation and route optimization.
+4. Program onboarding/configuration for routes, volunteers, recipients, meals and protocols.
+5. Normalized encrypted database schema + migrations.
+6. Notifications/background workers and scheduled volunteer confirmations.
+7. Safeguarding/privacy/retention review for pilot jurisdiction.
+8. Observability and agent evaluation suite.

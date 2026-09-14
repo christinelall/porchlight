@@ -1,0 +1,22 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Porchlight · Coordinator</title><link rel="stylesheet" href="/static/styles.css"></head><body>
+<div class="shell">
+<aside class="sidebar">
+  <div class="brand"><div class="brand-mark">⌂</div><div><strong>Porchlight</strong><small>Community delivery</small></div></div>
+  <nav class="nav"><a class="active" href="/coordinator"><span class="ico">◫</span><span>Today</span></a><a href="#routes"><span class="ico">⌁</span><span>Routes</span></a><a href="#attention"><span class="ico">!</span><span>Needs attention</span></a><a href="/admin"><span class="ico">⚙</span><span>Administration</span></a></nav>
+  <div class="sidebar-bottom"><div class="user-mini"><div class="avatar">M</div><div><strong>Maya</strong><small>Coordinator</small></div></div></div>
+</aside>
+<main class="main">
+  <header class="page-head"><div><h1>Good afternoon, Maya</h1><p>Here’s what needs your attention across today’s delivery routes.</p></div><div class="head-actions"><input id="search" class="search" placeholder="Search routes or volunteers"></div></header>
+  <section id="stats" class="stats"></section>
+  <div class="grid-2">
+    <section class="card card-pad" id="routes"><div class="card-head"><div><h2>Today’s routes</h2><p>Live delivery progress and coverage status</p></div></div><div id="routeList" class="route-list"></div></section>
+    <aside>
+      <section class="card card-pad" id="attention"><div class="card-head"><div><h2>Needs attention</h2><p>Only items that require a person</p></div><span id="attentionCount"></span></div><div id="attentionList" class="attention-list"></div></section>
+      <div class="section-title">Recently handled by Porchlight</div>
+      <section class="card card-pad"><div id="handled" class="handled"></div></section>
+    </aside>
+  </div>
+</main></div>
+<div id="drawerRoot"></div>
+<script type="module" src="/static/coordinator.js"></script>
+</body></html>

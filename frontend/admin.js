@@ -1,0 +1,7 @@
+import {$,api,esc,statusBadge,timeAgo,humanStatus} from '/static/shared.js';
+async function render(){const s=await api('/api/state');const rt=s.strands;
+ $('#diag').innerHTML=`<div class="diag-box"><span>Agent orchestration</span><strong>${rt.enabled?'Strands enabled':'Fallback / disabled'}</strong></div><div class="diag-box"><span>Model provider</span><strong>${esc(rt.provider)}</strong></div><div class="diag-box"><span>Model</span><strong>${esc(rt.model_id)}</strong></div>`;
+ $('#volRows').innerHTML=Object.values(s.volunteers).map(v=>`<tr><td><strong>${esc(v.name)}</strong></td><td>${statusBadge(v.available?'confirmed':'at_risk')}</td><td>${esc(v.eligible_routes.join(', '))}</td><td>${v.reliability||'—'}%</td><td>${esc(v.phone||'—')}</td></tr>`).join('');
+ $('#protocolCards').innerHTML=Object.values(s.protocols).map(p=>`<div class="route-row" style="grid-template-columns:1fr 130px 120px"><div><div class="route-name">${esc(p.title)}</div><div class="sub">${p.ordered_steps.length} defined steps · ${esc(p.escalation_target)}</div></div><div>${statusBadge(p.requires_acknowledgement?'needs_review':'confirmed')}</div><div class="route-meta"><span class="sub">Severity</span><strong>${esc(p.severity)}</strong></div></div>`).join('');
+ $('#auditRows').innerHTML=s.audit.slice(0,40).map(a=>`<div class="audit-row"><div class="sub">${timeAgo(a.timestamp)}</div><div><strong>${esc(a.actor)}</strong></div><div><strong>${esc(humanStatus(a.action))}</strong><div class="sub">${esc(a.detail)}</div></div></div>`).join('');
+}render();
